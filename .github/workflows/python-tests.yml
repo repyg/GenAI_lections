@@ -16,7 +16,7 @@ jobs:
         pip install pytest pytest-cov requests duckduckgo-search python-decouple
     - name: Run tests and collect coverage
       run: |
-        pytest test_geocoding_tool.py test_agent_integration.py --cov=. --cov-report=xml
+        pytest 3_1_LLM_agent/test_geocoding_tool.py 3_1_LLM_agent/test_agent_integration.py --cov=3_1_LLM_agent --cov-report=xml
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
       with:
