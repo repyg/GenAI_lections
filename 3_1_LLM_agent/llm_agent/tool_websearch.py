@@ -19,7 +19,7 @@ class WebSearchTool:
             with DDGS() as ddgs:
                 # Теперь используем специальный источник 'news' для новостей,
                 # он часто дает более длинные тексты, чем стандартный 'text'
-                search_results = list(ddgs.text(query, max_results=10)) #backend="news"
+                search_results = list(ddgs.text(query, max_results=3)) #backend="news"
 
             if not search_results:
                 return f"По запросу '{query}' ничего не найдено."

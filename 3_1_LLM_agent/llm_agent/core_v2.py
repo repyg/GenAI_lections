@@ -4,6 +4,7 @@ import requests
 import json
 from typing import List, Dict, Optional
 from decouple import config
+from geocoding_tool import GeocodingTool
 
 from .tool_calculator import CalculatorTool
 from .tool_websearch import WebSearchTool
@@ -14,21 +15,13 @@ class LLMAgent:
     Поддерживает как OpenRouter API, так и локальный Ollama.
     """
 
-    def __init__(self, model: str = "tngtech/deepseek-r1t2-chimera", local: bool = False, 
+    def __init__(self, model: str = "tngtech/deepseek-r1t2-chimera", local: bool = False,
                  ollama_base_url: str = "http://localhost:11434", ollama_model: str = "qwen3:0.6b"):
-        """
-        Инициализирует агента.
-        
-        Args:
-            model (str): Название модели для OpenRouter.
-            local (bool): Если True, использует локальный Ollama вместо OpenRouter.
-            ollama_base_url (str): Базовый URL для Ollama API.
-            ollama_model (str): Название модели в Ollama.
-        """
+
         self.local = local
         self.ollama_base_url = ollama_base_url
         self.ollama_model = ollama_model
-        
+
         if not self.local:
             self.api_key = config('OPENROUTER_API_KEY')
             self.url = "https://openrouter.ai/api/v1/chat/completions"
@@ -37,11 +30,12 @@ class LLMAgent:
             self.api_key = None
             self.url = f"{self.ollama_base_url}/v1/chat/completions"
             self.model = ollama_model
-        
+
         # Создаем экземпляры инструментов
         self.tools = {
             "calculator": CalculatorTool(),
             "web_search": WebSearchTool(),
+            "geocoding": GeocodingTool(),
         }
         self.conversation_history = []
     
@@ -86,8 +80,9 @@ class LLMAgent:
 
         Available tools:
         - **calculator**: For any math-related questions (numbers, calculations). Use it with the full expression.
-        - **web_search**: For finding any information about the real world (current events, facts, definitions). Use it with the user's question or a clear search query. USE ONLY RUSSIAN LANGUAGE QUERIES in this tool.
-
+        - **web_search**: For finding any information about the real world. ALWAYS use clear, space-separated keywords (e.g., "Спартак Динамо футбол счет последний матч"). Do not concatenate words.
+        - **geocoding**: For finding latitude/longitude of a place. Use place name as input.
+        
         Your response MUST be ONLY a JSON object of the following format.
         If one or more tools are needed to answer, return JSON of this structure:
         {{
@@ -162,18 +157,29 @@ class LLMAgent:
         Conversation Log:
         {chr(10).join([msg['content'] for msg in self.conversation_history])}
         """
-        
+
         payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}]
         }
-        
+
         if self.local:
             payload["stream"] = False
-        
+
         try:
             response_data = self._make_api_request(payload)
-            final_text = response_data["choices"][0]["message"]["content"]
+            message = response_data["choices"][0]["message"]
+
+            # Если обычный content пустой, пробуем взять reasoning_content
+            final_text = message.get("content")
+            if not final_text:
+                final_text = message.get("reasoning_content", "")
+
+            # Если все еще пусто — выводим сырой ответ для диагностики
+            if not final_text.strip():
+                print(f"[DEBUG] Сырой ответ от Ollama: {response_data}")
+                return "Модель сформировала пустой ответ. Проверьте размер контекста или вывод debug выше."
+
             return final_text
         except Exception as e:
             return f"Ошибка при генерации финального ответа. Детали: {e}"

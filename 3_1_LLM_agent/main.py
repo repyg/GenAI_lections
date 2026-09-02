@@ -9,7 +9,7 @@ def main():
 
     #agent = LLMAgent(model = "qwen/qwen3-next-80b-a3b-instruct:free")
 
-    agent = LLMAgent(local = True, ollama_model = "qwen3:4b") #ollama_base_url = "10.10.34.24:5678"
+    agent = LLMAgent(local = True, ollama_model = "qwen3.5:2b") #ollama_base_url = "10.10.34.24:5678"
 
     #agent = LLMAgent(model = "gpt-5.4-mini")
     #agent = LLMAgent(model = "grok4.1-fast")
@@ -17,7 +17,7 @@ def main():
     # Примеры запросов
     # query = "Сколько будет (5 + 3) * 2?"
     # query = "Какая погода в Москве?"
-    query = "Сколько будет (5 + 3) * 2? А также, кто выиграл последний матч Спартак-Динамо?"
+    query = "Сколько будет (5 + 3) * 2? Какой точный счет в последнем футбольном матче Спартак - Динамо? Узнай точные координаты Москвы."
 
     print(f"Ваш запрос: {query}")
     print("-" * 70)
